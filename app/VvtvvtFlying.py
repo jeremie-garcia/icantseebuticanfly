@@ -3,6 +3,12 @@ from serial import Serial
 from serial.tools.list_ports import comports
 
 from NatNetClient import NatNetClient
+from pythonosc.udp_client import SimpleUDPClient
+
+#sound server info
+SOUND_SERVER_IP = "127.0.0.1"
+SOUND_SERVER_PORT = 6666
+
 
 # baudrate for arduino
 BAUDRATE = 115200
@@ -98,6 +104,16 @@ def changeMotor(distance, x1, x2, z1, z2):
     else:
         return BR
 
+def subtract_vectors(vec1, vec2):
+    return [vec1[0] - vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]]
+
+
+def vector_to_text(vec):
+    mess = ""
+    for elem in vec:
+        mess = elem + " "
+    return mess
+
 class VvtvvtFlying():
     # find available arduinos and if any start them
 
@@ -107,6 +123,9 @@ class VvtvvtFlying():
         # arduino code
         self.arduino = None
         self.init_arduino()
+
+        # osc client to send data to audio server
+        self.client = SimpleUDPClient(SOUND_SERVER_IP, SOUND_SERVER_PORT)
 
         # create NatNetClient to retrieve data from Motion Tracking
         self.natnet = NatNetClient(rigidBodyListListener=self.receive_rigid_body_list)
@@ -136,6 +155,9 @@ class VvtvvtFlying():
         if self.arduino != None:
             self.arduino.write(bytes(message, 'utf-8'))
 
+    def send_data_to_audio_server(self, address, message):
+                self.client.send_message(address, message)
+
     def send_data_to_devices(self):
         # bracelet code
         # If app has changed position
@@ -153,6 +175,15 @@ class VvtvvtFlying():
                 message1 = constantRightMotor(initial[0], current[0], initial[2], current[2])
                 self.send_data_to_arduino(message1)
                 message2 = constantLeftMotor(initial[1], current[1])
+
+            # compute position of drone relative to pilot (pilot is at 0,0,0)
+            relative_pos = subtract_vectors(self.drone_location, self.pilot_location)
+            mess = vector_to_text(relative_pos)
+            self.send_data_to_audio_server("/drone", mess)
+
+            # send pilot head orientation
+            mess = vector_to_text(self.pilot_orientation)
+            self.send_data_to_audio_server("/pilot", mess)
 
     def receive_rigid_body_list(self, rigidBodyList, stamp):
         for (ac_id, pos, quat, valid) in rigidBodyList:
