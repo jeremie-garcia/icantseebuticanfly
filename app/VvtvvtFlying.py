@@ -46,10 +46,10 @@ def constantRightMotor(x1, x2, z1, z2):
     changeZ = z2 - z1
 
     #Right wrist
-    TR = "<data 0.5 0 0 0 0 0>"
-    TL = "<data 0 0.5 0 0 0 0>"
-    BL = "<data 0 0 0.5 0 0 0>"
-    BR = "<data 0 0 0 0.5 0 0>"
+    TR = "<data 0.7 0.0 0.0 0.0 0.0 0.0>"
+    TL = "<data 0.0 0.7 0.0 0.0 0.0 0.0>"
+    BL = "<data 0.0 0.0 0.7 0.0 0.0 0.0>"
+    BR = "<data 0.0 0.0 0.0 0.7 0.0 0.0>"
 
     # Right wrist only for now
     if changeX > 0 and changeZ > 0:
@@ -65,8 +65,8 @@ def constantLeftMotor(y1, y2):
     changeY = y2 - y1
 
     #Left wrist
-    Top = "<data 0 0 0 0 0.5 0>"
-    Bot = "<data 0 0 0 0 0 0.5"
+    Top = "<data 0.0 0.0 0.0 0.0 0.7 0.0>"
+    Bot = "<data 0.0 0.0 0.0 0.0 0.0 0.7"
 
     if changeY > 0:
         return Top
@@ -78,21 +78,21 @@ def changeMotor(distance, x1, x2, z1, z2):
     changeZ = z2 - z1
 
     if distance >= 0.5 and distance < 0.6:
-        d = 0.6
+        d = 0.75
     elif distance >= 0.6 and distance < 0.7:
-        d = 0.7
-    elif distance >= 0.7 and distance < 0.8:
         d = 0.8
+    elif distance >= 0.7 and distance < 0.8:
+        d = 0.85
     elif distance >= 0.8 and distance < 0.9:
         d = 0.9
     else:
         d = 1.0
 
     #Right wrist
-    TR = "<data " + distance + "0 0 0>"
-    TL = "<data 0 " + distance + " 1 0 0>"
-    BL = "<data 0 0 " + distance +" 0>"
-    BR = "<data 0 0 0 " + distance +">"
+    TR = "<data " + distance + "0.0 0.0 0.0 0.0 0.0>"
+    TL = "<data 0.0 " + distance + " 0.0 0.0 0.0 0.0>"
+    BL = "<data 0.0 0.0 " + distance +" 0.0 0.0 0.0>"
+    BR = "<data 0.0 0.0 0.0 " + distance +" 0.0 0.0>"
 
     # Right wrist only for now
     if changeX > 0 and changeZ > 0:
