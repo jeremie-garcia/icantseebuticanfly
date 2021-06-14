@@ -43,7 +43,7 @@ if __name__ == '__main__':
                 while(True):
 
                     if multiranger.right is not None:
-                        R_MAX = 2  # 2 meters
+                        R_MAX = 0.5  # 2 meters
                         # right left front back up down
                         values = [normalize(multiranger.right, R_MAX),
                                   normalize(multiranger.left, R_MAX),

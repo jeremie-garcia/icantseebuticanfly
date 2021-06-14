@@ -91,11 +91,13 @@ def changeMotor(distance, x1, x2, z1, z2):
     else:
         d = 1.0
 
+    d = max(0.0,min(d, 1.0))
+    print('d',d)
     # Right wrist
-    TR = "<data " + distance + "0.0 0.0 0.0 0.0 0.0>"
-    TL = "<data 0.0 " + distance + " 0.0 0.0 0.0 0.0>"
-    BL = "<data 0.0 0.0 " + distance + " 0.0 0.0 0.0>"
-    BR = "<data 0.0 0.0 0.0 " + distance + " 0.0 0.0>"
+    TR = "<data " + '{0:.3g}'.format(d) + "0.0 0.0 0.0 0.0 0.0>"
+    TL = "<data 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0 0.0 0.0>"
+    BL = "<data 0.0 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0 0.0>"
+    BR = "<data 0.0 0.0 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0>"
 
     # Right wrist only for now
     if changeX > 0 and changeZ > 0:
@@ -114,7 +116,6 @@ def subtract_vectors(vec1, vec2):
 
 def vector_to_text(vec):
     mess = ""
-    print(vec)
     for elem in vec:
         mess = mess + '{0:.3g}'.format(elem) + " "
     return mess
@@ -154,11 +155,13 @@ class VvtvvtFlying():
 
     def init_arduino(self):
         arduino_ports = find_available_arduinos()
+        print(arduino_ports)
         if len(arduino_ports) > 0:
             self.arduino = Serial(port=arduino_ports[0], baudrate=BAUDRATE, timeout=0.2)
 
     def send_data_to_arduino(self, message):
         if self.arduino != None:
+            print(message)
             self.arduino.write(bytes(message, 'utf-8'))
 
     def send_data_to_audio_server(self, address, message):
@@ -173,29 +176,31 @@ class VvtvvtFlying():
                                              targets[2][2])
 
             initial = self.drone_prev_location
+            #TODO update this part to make it working properly
             # If the distance from the app to the target is further than where it previous was, change the vibration pattern
             if self.current_distance > self.prev_distance:
-                pass
-                # message = changeMotor(self.current_distance, initial[0], current[0], initial[2], current[2])
-                # self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
+                message = changeMotor(self.current_distance, initial[0], current[0], initial[2], current[2])
+                self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
             else:
-                # message1 = constantRightMotor(initial[0], current[0], initial[2], current[2])
-                # self.send_data_to_arduino(message1)
+                message1 = constantRightMotor(initial[0], current[0], initial[2], current[2])
+                self.send_data_to_arduino(message1)
                 message2 = constantLeftMotor(initial[1], current[1])
+                self.send_data_to_arduino(message2)
 
-            # compute position of drone relative to pilot (pilot is at 0,0,0)
-            relative_pos = subtract_vectors(self.drone_location, self.pilot_location)
-            #print(relative_pos)
-            #mess = vector_to_text(relative_pos)
-            #print("mess",mess)
-            self.send_data_to_audio_server("drone", relative_pos)
 
-            # send pilot head orientation
-            #mess = vector_to_text(self.pilot_orientation)
-            self.send_data_to_audio_server("pilot", self.pilot_orientation)
+        # compute position of drone relative to pilot (pilot is at 0,0,0)
+        relative_pos = subtract_vectors(self.drone_location, self.pilot_location)
+        #print(relative_pos)
+        #mess = vector_to_text(relative_pos)
+        #print("mess",mess)
+        self.send_data_to_audio_server("drone", relative_pos)
 
-            # feedback right left front back up down (0-1)
-            #self.send_data_to_audio_server("feedback", mess)
+        # send pilot head orientation
+        #mess = vector_to_text(self.pilot_orientation)
+        self.send_data_to_audio_server("pilot", self.pilot_orientation)
+
+        # feedback right left front back up down (0-1)
+        #self.send_data_to_audio_server("feedback", mess)
 
     def receive_rigid_body_list(self, rigidBodyList, stamp):
         for (ac_id, pos, quat, valid) in rigidBodyList:
@@ -209,7 +214,6 @@ class VvtvvtFlying():
 
         # update data to be sent to bracelet and audio
         self.send_data_to_devices()
-
         # Update the location of the app
         self.drone_prev_location = self.drone_location
         # Update the distance between the app and the target
