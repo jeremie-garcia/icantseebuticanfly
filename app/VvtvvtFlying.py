@@ -5,22 +5,22 @@ from serial.tools.list_ports import comports
 from NatNetClient import NatNetClient
 from pythonosc.udp_client import SimpleUDPClient
 
-#sound server info
+# sound server info
 SOUND_SERVER_IP = "127.0.0.1"
 SOUND_SERVER_PORT = 6666
-
 
 # baudrate for arduino
 BAUDRATE = 115200
 
 # update from motive app
-PILOT_ID = 220
-DRONE_ID = 111
+PILOT_ID = 224
+DRONE_ID = 223
 
 # Change based on where the targets are in voliere
 targets = [[-0.1620016098022461, -2.01731538772583, 0.3205585181713104],
            [-2.461967945098877, 1.3924974203109741, 0.3217718005180359],
            [2.544313430786133, 1.4535149335861206, 0.3303894102573395]]
+
 
 def distance(x1, x2, y1, y2, z1, z2):
     distanceX = (x2 - x1) * (x2 - x1)
@@ -28,6 +28,7 @@ def distance(x1, x2, y1, y2, z1, z2):
     distanceZ = (y2 - x1) * (y2 - x1)
     distance = math.sqrt(distanceX + distanceY + distanceZ)
     return distance
+
 
 def find_available_arduinos():
     arduino_descriptions = ["arduino", "usb"]
@@ -45,7 +46,7 @@ def constantRightMotor(x1, x2, z1, z2):
     changeX = x2 - x1
     changeZ = z2 - z1
 
-    #Right wrist
+    # Right wrist
     TR = "<data 0.7 0.0 0.0 0.0 0.0 0.0>"
     TL = "<data 0.0 0.7 0.0 0.0 0.0 0.0>"
     BL = "<data 0.0 0.0 0.7 0.0 0.0 0.0>"
@@ -61,10 +62,11 @@ def constantRightMotor(x1, x2, z1, z2):
     else:
         return BR
 
+
 def constantLeftMotor(y1, y2):
     changeY = y2 - y1
 
-    #Left wrist
+    # Left wrist
     Top = "<data 0.0 0.0 0.0 0.0 0.7 0.0>"
     Bot = "<data 0.0 0.0 0.0 0.0 0.0 0.7"
 
@@ -72,6 +74,7 @@ def constantLeftMotor(y1, y2):
         return Top
     else:
         return Bot
+
 
 def changeMotor(distance, x1, x2, z1, z2):
     changeX = x2 - x1
@@ -88,11 +91,11 @@ def changeMotor(distance, x1, x2, z1, z2):
     else:
         d = 1.0
 
-    #Right wrist
+    # Right wrist
     TR = "<data " + distance + "0.0 0.0 0.0 0.0 0.0>"
     TL = "<data 0.0 " + distance + " 0.0 0.0 0.0 0.0>"
-    BL = "<data 0.0 0.0 " + distance +" 0.0 0.0 0.0>"
-    BR = "<data 0.0 0.0 0.0 " + distance +" 0.0 0.0>"
+    BL = "<data 0.0 0.0 " + distance + " 0.0 0.0 0.0>"
+    BR = "<data 0.0 0.0 0.0 " + distance + " 0.0 0.0>"
 
     # Right wrist only for now
     if changeX > 0 and changeZ > 0:
@@ -104,15 +107,18 @@ def changeMotor(distance, x1, x2, z1, z2):
     else:
         return BR
 
+
 def subtract_vectors(vec1, vec2):
     return [vec1[0] - vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]]
 
 
 def vector_to_text(vec):
     mess = ""
+    print(vec)
     for elem in vec:
-        mess = elem + " "
+        mess = mess + '{0:.3g}'.format(elem) + " "
     return mess
+
 
 class VvtvvtFlying():
     # find available arduinos and if any start them
@@ -136,7 +142,7 @@ class VvtvvtFlying():
 
         self.drone_location = [0, 0, 0]
         self.drone_prev_location = [0, 0, 0]
-        self.pilot_location = [0, 0, 0]
+        self.pilot_location = [0, -5, 1.7]
         self.pilot_orientation = [0, 0, 0, 0]
 
         # distances
@@ -156,7 +162,7 @@ class VvtvvtFlying():
             self.arduino.write(bytes(message, 'utf-8'))
 
     def send_data_to_audio_server(self, address, message):
-                self.client.send_message(address, message)
+        self.client.send_message(address, message)
 
     def send_data_to_devices(self):
         # bracelet code
@@ -166,24 +172,30 @@ class VvtvvtFlying():
             self.current_distance = distance(current[0], targets[2][0], current[1], targets[2][1], current[2],
                                              targets[2][2])
 
-            initial = self.prev_distance
+            initial = self.drone_prev_location
             # If the distance from the app to the target is further than where it previous was, change the vibration pattern
             if self.current_distance > self.prev_distance:
-                message = changeMotor(self.current_distance, initial[0], current[0], initial[2], current[2])
-                self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
+                pass
+                # message = changeMotor(self.current_distance, initial[0], current[0], initial[2], current[2])
+                # self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
             else:
-                message1 = constantRightMotor(initial[0], current[0], initial[2], current[2])
-                self.send_data_to_arduino(message1)
+                # message1 = constantRightMotor(initial[0], current[0], initial[2], current[2])
+                # self.send_data_to_arduino(message1)
                 message2 = constantLeftMotor(initial[1], current[1])
 
             # compute position of drone relative to pilot (pilot is at 0,0,0)
             relative_pos = subtract_vectors(self.drone_location, self.pilot_location)
-            mess = vector_to_text(relative_pos)
-            self.send_data_to_audio_server("/drone", mess)
+            #print(relative_pos)
+            #mess = vector_to_text(relative_pos)
+            #print("mess",mess)
+            self.send_data_to_audio_server("drone", relative_pos)
 
             # send pilot head orientation
-            mess = vector_to_text(self.pilot_orientation)
-            self.send_data_to_audio_server("/pilot", mess)
+            #mess = vector_to_text(self.pilot_orientation)
+            self.send_data_to_audio_server("pilot", self.pilot_orientation)
+
+            # feedback right left front back up down (0-1)
+            #self.send_data_to_audio_server("feedback", mess)
 
     def receive_rigid_body_list(self, rigidBodyList, stamp):
         for (ac_id, pos, quat, valid) in rigidBodyList:
