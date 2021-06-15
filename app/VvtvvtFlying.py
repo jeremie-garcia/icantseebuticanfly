@@ -17,7 +17,7 @@ PILOT_ID = 224
 DRONE_ID = 223
 
 # Change based on where the targets are in voliere
-targets = [[-0.1620016098022461, -2.01731538772583, 0.3205585181713104],
+target_location = [[-0.1620016098022461, -2.01731538772583, 0.3205585181713104],
            [-2.461967945098877, 1.3924974203109741, 0.3217718005180359],
            [2.544313430786133, 1.4535149335861206, 0.3303894102573395]]
 
@@ -42,51 +42,37 @@ def find_available_arduinos():
     return arduino_ports
 
 
-def constantRightMotor(x1, x2, z1, z2):
-    changeX = x2 - x1
-    changeZ = z2 - z1
+def constant_feedback(drone_location_x1, drone_location_x2, drone_location_z1, drone_location_z2):
+    changeX = drone_location_x2 - drone_location_x2
+    changeZ = drone_location_z2 - drone_location_z1
 
     # Right wrist
-    TR = "<data 0.7 0.0 0.0 0.0 0.0 0.0>"
-    TL = "<data 0.0 0.7 0.0 0.0 0.0 0.0>"
-    BL = "<data 0.0 0.0 0.7 0.0 0.0 0.0>"
-    BR = "<data 0.0 0.0 0.0 0.7 0.0 0.0>"
+    top_right_motor = "<data 0.7 0.0 0.0 0.0>"
+    top_left_motor = "<data 0.0 0.7 0.0 0.0>"
+    bottom_left_motor = "<data 0.0 0.0 0.7 0.0>"
+    bottom_right_motor = "<data 0.0 0.0 0.0 0.7>"
 
-    # Right wrist only for now
     if changeX > 0 and changeZ > 0:
-        return TR
+        return top_right_motor
     elif changeX < 0 and changeZ > 0:
-        return TL
+        return top_left_motor
     elif changeX < 0 and changeZ < 0:
-        return BL
+        return bottom_left_motor
     else:
-        return BR
+        return bottom_right_motor
 
 
-def constantLeftMotor(y1, y2):
-    changeY = y2 - y1
+def corrective_feedback(distance_drone_to_target, drone_location_x1, drone_location_x2, drone_location_z1, drone_location_z2):
+    changeX = drone_location_x2 - drone_location_x2
+    changeZ = drone_location_z2 - drone_location_z1
 
-    # Left wrist
-    Top = "<data 0.0 0.0 0.0 0.0 0.7 0.0>"
-    Bot = "<data 0.0 0.0 0.0 0.0 0.0 0.7"
-
-    if changeY > 0:
-        return Top
-    else:
-        return Bot
-
-
-def changeMotor(distance, x1, x2, z1, z2):
-    changeX = x2 - x1
-    changeZ = z2 - z1
-
-    if distance >= 0.5 and distance < 0.6:
+    if distance_drone_to_target >= 0.5 and distance_drone_to_target < 0.6:
         d = 0.75
-    elif distance >= 0.6 and distance < 0.7:
+    elif distance_drone_to_target >= 0.6 and distance_drone_to_target < 0.7:
         d = 0.8
-    elif distance >= 0.7 and distance < 0.8:
+    elif distance_drone_to_target >= 0.7 and distance_drone_to_target < 0.8:
         d = 0.85
-    elif distance >= 0.8 and distance < 0.9:
+    elif distance_drone_to_target >= 0.8 and distance_drone_to_target < 0.9:
         d = 0.9
     else:
         d = 1.0
@@ -94,20 +80,19 @@ def changeMotor(distance, x1, x2, z1, z2):
     d = max(0.0,min(d, 1.0))
     print('d',d)
     # Right wrist
-    TR = "<data " + '{0:.3g}'.format(d) + "0.0 0.0 0.0 0.0 0.0>"
-    TL = "<data 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0 0.0 0.0>"
-    BL = "<data 0.0 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0 0.0>"
-    BR = "<data 0.0 0.0 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0>"
+    top_right_motor = "<data " + '{0:.3g}'.format(d) + "0.0 0.0 0.0>"
+    top_left_motor = "<data 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0>"
+    bottom_left_motor = "<data 0.0 0.0 " + '{0:.3g}'.format(d) + " 0.0>"
+    bottom_right_motor = "<data 0.0 0.0 0.0 " + '{0:.3g}'.format(d) + ">"
 
-    # Right wrist only for now
     if changeX > 0 and changeZ > 0:
-        return TR
+        return top_right_motor
     elif changeX < 0 and changeZ > 0:
-        return TL
+        return top_left_motor
     elif changeX < 0 and changeZ < 0:
-        return BL
+        return bottom_left_motor
     else:
-        return BR
+        return bottom_right_motor
 
 
 def subtract_vectors(vec1, vec2):
@@ -171,22 +156,19 @@ class VvtvvtFlying():
         # bracelet code
         # If app has changed position
         if self.drone_location != self.drone_prev_location:
-            current = self.drone_location
-            self.current_distance = distance(current[0], targets[2][0], current[1], targets[2][1], current[2],
-                                             targets[2][2])
+            drone_current_location = self.drone_location
+            self.current_distance = distance(drone_current_location[0], target_location[2][0], drone_current_location[1], target_location[2][1], drone_current_location[2],
+                                             target_location[2][2])
 
-            initial = self.drone_prev_location
+            drone_previous_location = self.drone_prev_location
             #TODO update this part to make it working properly
             # If the distance from the app to the target is further than where it previous was, change the vibration pattern
             if self.current_distance > self.prev_distance:
-                message = changeMotor(self.current_distance, initial[0], current[0], initial[2], current[2])
+                message = corrective_feedback(self.current_distance, drone_previous_location[0], drone_current_location[0], drone_previous_location[2], drone_current_location[2])
                 self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
             else:
-                message1 = constantRightMotor(initial[0], current[0], initial[2], current[2])
-                self.send_data_to_arduino(message1)
-                message2 = constantLeftMotor(initial[1], current[1])
-                self.send_data_to_arduino(message2)
-
+                message = constant_feedback(drone_previous_location[0], drone_current_location[0], drone_previous_location[2], drone_current_location[2])
+                self.send_data_to_arduino(message)
 
         # compute position of drone relative to pilot (pilot is at 0,0,0)
         relative_pos = subtract_vectors(self.drone_location, self.pilot_location)
