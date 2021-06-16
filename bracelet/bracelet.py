@@ -1,4 +1,5 @@
 import math
+from PyQt5.QtCore import QTimer
 from serial import Serial
 from serial.tools.list_ports import comports
 
@@ -22,6 +23,11 @@ OFF = 0
 STARTING = 1
 READY = 2
 
+MIN_FREQ = 100
+MAX_FREQ = 500
+
+BURST_DELAY = 50
+
 
 class Bracelet():
     # find available arduinos and if any start them
@@ -35,10 +41,20 @@ class Bracelet():
         self.init_arduino()
 
         # refresh rate
-        self.rate = 50
+        self.rate = 20
         self.duration = 1000
         self.animation_timer = QTimer()
         self.animation_timer.timeout.connect(self.update_animation)
+        self.values_to_send = [0, 0, 0, 0]
+
+        # bracelet timers for each motors
+        self.timers = [QTimer(), QTimer() , QTimer(), QTimer()]
+
+    def set_hight_value(self, index):
+        self.values_to_send[index] = 0.7
+
+    def set_low_value(self, index):
+        self.values_to_send[index] = 0
 
     def init_arduino(self):
         arduino_ports = find_available_arduinos()
@@ -67,17 +83,18 @@ class Bracelet():
         QTimer.singleShot(250, self.turn_off_all_motors)
         QTimer.singleShot(750, self.turn_on_all_motors)
         QTimer.singleShot(1750, self.turn_off_all_motors)
+
         def set_state_to_ready():
             self.state = READY
+
         QTimer.singleShot(1750, set_state_to_ready)
 
     def update_animation(self):
-        print('animation loop')
         if self.state == OFF:
             self.startup_pattern()
             self.state = STARTING
         elif self.state == READY:
-            print('ready to send data')
+            self.send_values_to_bracelet(self.values_to_send)
 
     def start(self):
         self.animation_timer.start(self.rate)
@@ -86,10 +103,29 @@ class Bracelet():
         self.animation_timer.stop()
 
     def set_distance_to_target(self, values):
-        print()
+        print("distance")
+
+    def trigger_burst_for_index(self, index):
+        self.set_hight_value(index)
+        QTimer.singleShot(BURST_DELAY, lambda: (self.set_low_value(index)))
 
     def set_distance_to_obstacles(self, values):
-        print()
+        print("obstacles")
+        for index in range(len(values)):
+            self.process_distance_to_frequency(index, values[index])
+
+    def process_distance_to_frequency(self, index, value):
+        timer = self.timers[index]
+        if value == 0:
+            self.set_low_value(index)
+            timer.stop()
+        else:
+            interval = (1 - value) * (MAX_FREQ - MIN_FREQ) + MIN_FREQ
+            if not timer.isActive():
+                timer.start(interval)
+                timer.timeout.connect(lambda: self.trigger_burst_for_index(index))
+            else:
+                self.timers[index].setInterval(interval)
 
 
 if __name__ == "__main__":
@@ -100,5 +136,13 @@ if __name__ == "__main__":
     app = QCoreApplication([])
     bracelet = Bracelet()
     bracelet.start()
+    QTimer.singleShot(2000, lambda: (bracelet.set_distance_to_obstacles([1,1,1,1])))
+    QTimer.singleShot(3000, lambda: (bracelet.set_distance_to_obstacles([0.5, 1, 1, 1])))
+    QTimer.singleShot(3000, lambda: (bracelet.set_distance_to_obstacles([0.2, 1, 1, 1])))
+
+    QTimer.singleShot(4000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 1, 1])))
+    QTimer.singleShot(5000, lambda: (bracelet.set_distance_to_obstacles([0.5, 0.5, 1, 1])))
+    QTimer.singleShot(6000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 0.3, 0.5])))
+
     app.aboutToQuit.connect(bracelet.stop)
     sys.exit(app.exec_())

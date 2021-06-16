@@ -12,6 +12,9 @@ from cflib.utils.multiranger import Multiranger
 
 from pythonosc.udp_client import SimpleUDPClient
 
+from bracelet.bracelet import Bracelet
+
+
 if len(sys.argv) > 1:
     URI = sys.argv[1]
 
@@ -26,6 +29,9 @@ if __name__ == '__main__':
 
     # osc client to send data to audio server
     client = SimpleUDPClient(SOUND_SERVER_IP, SOUND_SERVER_PORT)
+
+    #create a bracelet to send tactile feedback
+    bracelet = Bracelet()
 
 
     def normalize(val, max_val):
@@ -43,7 +49,7 @@ if __name__ == '__main__':
                 while(True):
 
                     if multiranger.right is not None:
-                        R_MAX = 0.5  # 2 meters
+                        R_MAX = 1  # 2 meters
                         # right left front back up down
                         values = [normalize(multiranger.right, R_MAX),
                                   normalize(multiranger.left, R_MAX),
@@ -53,5 +59,6 @@ if __name__ == '__main__':
                                   normalize(multiranger.down, R_MAX)]
 
                         client.send_message("feedback", values)
+                        bracelet.set_distance_to_obstacles(values)
 
                     time.sleep(0.05)
