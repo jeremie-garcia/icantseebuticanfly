@@ -19,6 +19,13 @@ if len(sys.argv) > 1:
     URI = sys.argv[1]
 
 if __name__ == '__main__':
+
+
+    from PyQt5.QtCore import QCoreApplication
+
+    app = QCoreApplication([])
+
+
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
     available = cflib.crtp.scan_interfaces()
@@ -62,3 +69,6 @@ if __name__ == '__main__':
                         bracelet.set_distance_to_obstacles(values)
 
                     time.sleep(0.05)
+
+    app.aboutToQuit.connect(bracelet.stop)
+    sys.exit(app.exec_())
