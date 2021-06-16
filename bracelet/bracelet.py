@@ -45,7 +45,7 @@ class Bracelet():
         print(arduino_ports)
         if len(arduino_ports) > 0:
             self.arduino = Serial(port=arduino_ports[0], baudrate=BAUDRATE, timeout=0.2)
-            self.state = START
+            self.state = STARTING
 
     def send_data_to_bracelet(self, message):
         print('sending this to the bracelet', message)
@@ -98,8 +98,7 @@ if __name__ == "__main__":
     from PyQt5.QtCore import QCoreApplication, QTimer
 
     app = QCoreApplication([])
-
     bracelet = Bracelet()
     bracelet.start()
-
+    app.aboutToQuit.connect(bracelet.stop)
     sys.exit(app.exec_())
