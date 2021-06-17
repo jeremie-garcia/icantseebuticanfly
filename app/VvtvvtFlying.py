@@ -16,10 +16,14 @@ BAUDRATE = 115200
 PILOT_ID = 224
 DRONE_ID = 223
 
+
+
 # Change based on where the targets are in voliere
 target_location = [[-0.1620016098022461, -2.01731538772583, 0.3205585181713104],
            [-2.461967945098877, 1.3924974203109741, 0.3217718005180359],
            [2.544313430786133, 1.4535149335861206, 0.3303894102573395]]
+
+TARGET_INDEX = 2
 
 
 def distance(x1, x2, y1, y2, z1, z2):
@@ -140,7 +144,7 @@ class VvtvvtFlying():
 
     def init_arduino(self):
         arduino_ports = find_available_arduinos()
-        print(arduino_ports)
+        #print(arduino_ports)
         if len(arduino_ports) > 0:
             self.arduino = Serial(port=arduino_ports[0], baudrate=BAUDRATE, timeout=0.2)
 
@@ -150,6 +154,7 @@ class VvtvvtFlying():
             self.arduino.write(bytes(message, 'utf-8'))
 
     def send_data_to_audio_server(self, address, message):
+        print(message)
         self.client.send_message(address, message)
 
     def send_data_to_devices(self):
@@ -170,19 +175,18 @@ class VvtvvtFlying():
                 message = constant_feedback(drone_previous_location[0], drone_current_location[0], drone_previous_location[2], drone_current_location[2])
                 self.send_data_to_arduino(message)
 
-        # compute position of drone relative to pilot (pilot is at 0,0,0)
-        relative_pos = subtract_vectors(self.drone_location, self.pilot_location)
-        #print(relative_pos)
-        #mess = vector_to_text(relative_pos)
-        #print("mess",mess)
-        self.send_data_to_audio_server("drone", relative_pos)
+        # compute position of drone relative to pilot
+        relative_drone_pos = subtract_vectors(self.drone_location, self.pilot_location)
+        self.send_data_to_audio_server("drone", relative_drone_pos)
+
+        # compute position of target relative to pilot
+        relative_target_pos = subtract_vectors(target_location[TARGET_INDEX], self.pilot_location)
+        self.send_data_to_audio_server("target", relative_target_pos)
 
         # send pilot head orientation
-        #mess = vector_to_text(self.pilot_orientation)
         self.send_data_to_audio_server("pilot", self.pilot_orientation)
 
-        # feedback right left front back up down (0-1)
-        #self.send_data_to_audio_server("feedback", mess)
+
 
     def receive_rigid_body_list(self, rigidBodyList, stamp):
         for (ac_id, pos, quat, valid) in rigidBodyList:
@@ -204,3 +208,4 @@ class VvtvvtFlying():
 
 if __name__ == "__main__":
     vvt = VvtvvtFlying(PILOT_ID, DRONE_ID)
+    vvt.send_data_to_devices()
