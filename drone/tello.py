@@ -5,7 +5,7 @@ from threading import Thread
 
 from PyQt5.QtWidgets import QApplication, QPushButton
 
-from drone import Drone
+from drone.drone import Drone
 
 INTERVAL = 1
 

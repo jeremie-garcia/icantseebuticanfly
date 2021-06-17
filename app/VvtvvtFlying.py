@@ -25,7 +25,6 @@ target_location = [[-0.1620016098022461, -2.01731538772583, 0.3205585181713104],
 
 TARGET_INDEX = 2
 
-
 def distance(x1, x2, y1, y2, z1, z2):
     distanceX = (x2 - x1) * (x2 - x1)
     distanceY = (y2 - y1) * (y2 - y1)
@@ -82,7 +81,7 @@ def corrective_feedback(distance_drone_to_target, drone_location_x1, drone_locat
         d = 1.0
 
     d = max(0.0,min(d, 1.0))
-    print('d',d)
+    #print('d',d)
     # Right wrist
     top_right_motor = "<data " + '{0:.3g}'.format(d) + "0.0 0.0 0.0>"
     top_left_motor = "<data 0.0 " + '{0:.3g}'.format(d) + " 0.0 0.0>"
@@ -170,10 +169,10 @@ class VvtvvtFlying():
             # If the distance from the app to the target is further than where it previous was, change the vibration pattern
             if self.current_distance > self.prev_distance:
                 message = corrective_feedback(self.current_distance, drone_previous_location[0], drone_current_location[0], drone_previous_location[2], drone_current_location[2])
-                self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
+                #self.send_data_to_arduino(message)  # Otherwise, keep the vibration pattern consistent
             else:
                 message = constant_feedback(drone_previous_location[0], drone_current_location[0], drone_previous_location[2], drone_current_location[2])
-                self.send_data_to_arduino(message)
+                #self.send_data_to_arduino(message)
 
         # compute position of drone relative to pilot
         relative_drone_pos = subtract_vectors(self.drone_location, self.pilot_location)

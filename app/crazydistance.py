@@ -13,7 +13,7 @@ from cflib.utils.multiranger import Multiranger
 from pythonosc.udp_client import SimpleUDPClient
 
 from bracelet.bracelet import Bracelet
-
+from drone.crazydrone import CrazyDrone
 
 if len(sys.argv) > 1:
     URI = sys.argv[1]
@@ -39,8 +39,6 @@ if __name__ == '__main__':
 
     #create a bracelet to send tactile feedback
     bracelet = Bracelet()
-    bracelet.start()
-
 
     def normalize(val, max_val):
         newval = val / max_val
@@ -49,32 +47,31 @@ if __name__ == '__main__':
 
     if len(available) > 0:
         URI = available[0][0]
-        cf = Crazyflie(rw_cache='./cache')
+        drone = CrazyDrone(URI)
 
-        with SyncCrazyflie(URI, cf=cf) as scf:
-            with Multiranger(scf) as multiranger:
+        def update_range():
+            multiranger = drone.multiranger
+            if multiranger is not None:
+                print("update range", multiranger.right)
 
-                def update_range():
-                    print("update range", multiranger.right)
-                    if multiranger.right is not None:
-                        R_MAX = 1  # 2 meters
-                        # right left front back up down
-                        values = [normalize(multiranger.right, R_MAX),
-                                  normalize(multiranger.left, R_MAX),
-                                  normalize(multiranger.front, R_MAX),
-                                  normalize(multiranger.back, R_MAX),
-                                  normalize(multiranger.up, R_MAX),
-                                  normalize(multiranger.down, R_MAX)]
+            if multiranger is not None and multiranger.right is not None:
+                R_MAX = 2  # 2 meters
+                # right left front back up down
+                values = [normalize(multiranger.right, R_MAX),
+                          normalize(multiranger.left, R_MAX),
+                          normalize(multiranger.front, R_MAX),
+                          normalize(multiranger.back, R_MAX),
+                          normalize(multiranger.up, R_MAX),
+                          normalize(multiranger.down, R_MAX)]
+                print(values)
+                client.send_message("feedback", values)
+                #vibration_values = [values[0], values[1], values[4], values[5]]
+                vibration_values = [values[0], values[1], values[2], values[3]]
+                bracelet.set_distance_to_obstacles(vibration_values)
 
-                        client.send_message("feedback", values)
-
-                        vibration_values = [values[0], values[1], values[4], values[5]]
-                        bracelet.set_distance_to_obstacles(vibration_values)
-
-                timer = QTimer()
-                timer.timeout.connect(update_range)
-                timer.start(500)
-
+    timer = QTimer()
+    timer.timeout.connect(update_range)
+    timer.start(2000)
 
     app.aboutToQuit.connect(bracelet.stop)
     sys.exit(app.exec_())

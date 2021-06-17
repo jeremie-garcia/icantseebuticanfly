@@ -23,8 +23,8 @@ OFF = 0
 STARTING = 1
 READY = 2
 
-MIN_FREQ = 500
-MAX_FREQ = 2000
+MIN_FREQ = 250
+MAX_FREQ = 1000
 
 BURST_DELAY = 100
 
@@ -45,13 +45,14 @@ class Bracelet():
         self.animation_timer = QTimer()
         self.animation_timer.timeout.connect(self.update_animation)
         self.values_to_send = [0, 0, 0, 0]
-        self.animation_timer.start(self.rate)
 
+        self.startup_pattern()
         # bracelet timers for each motors
         self.timers = [QTimer(), QTimer() , QTimer(), QTimer()]
+        self.intervals = [1000,1000,1000,1000]
 
     def set_hight_value(self, index):
-        self.values_to_send[index] = 1
+        self.values_to_send[index] = 0.7
 
     def set_low_value(self, index):
         self.values_to_send[index] = 0
@@ -79,17 +80,19 @@ class Bracelet():
         self.send_values_to_bracelet([1, 1, 1, 1])
 
     def startup_pattern(self):
-        print("hehe startup pattern")
+        print("BRACELET STARTUP")
         QTimer.singleShot(3000, self.turn_on_all_motors)
         QTimer.singleShot(4500, self.turn_off_all_motors)
 
         def set_state_to_ready():
             self.state = READY
+            self.animation_timer.start(self.rate)
+            print("BRACELET READY")
 
-        QTimer.singleShot(5000, set_state_to_ready)
+        QTimer.singleShot(6500, set_state_to_ready)
 
     def update_animation(self):
-        print('values', self.values_to_send)
+        #print('values', self.values_to_send)
         if self.state == OFF:
             self.startup_pattern()
             self.state = STARTING
@@ -97,7 +100,6 @@ class Bracelet():
             self.send_values_to_bracelet(self.values_to_send)
 
     def start(self):
-        print("starting bracelet", self.rate)
         self.animation_timer.start(self.rate)
 
     def stop(self):
@@ -113,7 +115,6 @@ class Bracelet():
 
     #values are R L U D
     def set_distance_to_obstacles(self, values):
-        #print("obstacles", values)
         for index in range(len(values)):
             self.process_distance_to_frequency(index, values[index])
 
@@ -124,12 +125,13 @@ class Bracelet():
             timer.stop()
         else:
             interval = value * (MAX_FREQ - MIN_FREQ) + MIN_FREQ
+            self.intervals[index] = round(interval)
             interval = round(interval)
             if not timer.isActive():
                 timer.start(interval)
                 timer.timeout.connect(lambda: self.trigger_burst_for_index(index))
             else:
-                self.timers[index].setInterval(interval)
+                timer.setInterval(interval)
 
 
 if __name__ == "__main__":
@@ -139,23 +141,9 @@ if __name__ == "__main__":
 
     app = QCoreApplication([])
     bracelet = Bracelet()
-    QTimer.singleShot(8000, lambda: (bracelet.set_distance_to_obstacles([0.8,1,1,1])))
-    QTimer.singleShot(12000, lambda: (bracelet.set_distance_to_obstacles([0.6, 1, 1, 1])))
-    QTimer.singleShot(15000, lambda: (bracelet.set_distance_to_obstacles([0.2, 1, 1, 1])))
-    QTimer.singleShot(20000, lambda: (bracelet.set_distance_to_obstacles([0., 1, 1, 1])))
-    QTimer.singleShot(25000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 1, 1])))
+    QTimer.singleShot(5000, lambda: (bracelet.set_distance_to_obstacles([1,1,1,0.1])))
+    QTimer.singleShot(18000, lambda: (bracelet.set_distance_to_obstacles([1,1, 1,1])))
 
-    QTimer.singleShot(28000, lambda: (bracelet.set_distance_to_obstacles([1, 0.8, 1, 1])))
-    QTimer.singleShot(32000, lambda: (bracelet.set_distance_to_obstacles([1, 0.6, 1, 1])))
-    QTimer.singleShot(35000, lambda: (bracelet.set_distance_to_obstacles([1, 0.2, 1, 1])))
-    QTimer.singleShot(40000, lambda: (bracelet.set_distance_to_obstacles([1, 0., 1, 1])))
-    QTimer.singleShot(45000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 1, 1])))
-
-    #
-    # QTimer.singleShot(17000, lambda: (bracelet.set_distance_to_obstacles([1, 0.8, 1, 1])))
-    # QTimer.singleShot(19000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 0.5, 1])))
-    # QTimer.singleShot(20000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 1, 0.5])))
-    # QTimer.singleShot(25000, lambda: (bracelet.set_distance_to_obstacles([1, 1, 1, 1])))
 
     app.aboutToQuit.connect(bracelet.stop)
     sys.exit(app.exec_())
