@@ -21,7 +21,7 @@ if len(sys.argv) > 1:
 if __name__ == '__main__':
 
 
-    from PyQt5.QtCore import QCoreApplication
+    from PyQt5.QtCore import QCoreApplication, QTimer
 
     app = QCoreApplication([])
 
@@ -39,6 +39,7 @@ if __name__ == '__main__':
 
     #create a bracelet to send tactile feedback
     bracelet = Bracelet()
+    bracelet.start()
 
 
     def normalize(val, max_val):
@@ -53,8 +54,8 @@ if __name__ == '__main__':
         with SyncCrazyflie(URI, cf=cf) as scf:
             with Multiranger(scf) as multiranger:
 
-                while(True):
-
+                def update_range():
+                    print("update range", multiranger.right)
                     if multiranger.right is not None:
                         R_MAX = 1  # 2 meters
                         # right left front back up down
@@ -66,9 +67,14 @@ if __name__ == '__main__':
                                   normalize(multiranger.down, R_MAX)]
 
                         client.send_message("feedback", values)
-                        bracelet.set_distance_to_obstacles(values)
 
-                    time.sleep(0.05)
+                        vibration_values = [values[0], values[1], values[4], values[5]]
+                        bracelet.set_distance_to_obstacles(vibration_values)
+
+                timer = QTimer()
+                timer.timeout.connect(update_range)
+                timer.start(500)
+
 
     app.aboutToQuit.connect(bracelet.stop)
     sys.exit(app.exec_())
