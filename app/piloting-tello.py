@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtWidgets import QApplication, QPushButton
+from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 
 from app.FrSky import find_available_frsky_ids, FrSky
 from drone.tello import TelloDrone
@@ -8,17 +8,21 @@ from drone.tello import TelloDrone
 if __name__ == "__main__":
     app = QApplication([])
     tello = TelloDrone()
-    button = QPushButton("start")
-    stp_button = QPushButton("stop")
-    button.clicked.connect(tello.take_off)
-    stp_button.clicked.connect(tello.land)
-    button.show()
-    stp_button.show()
+
+    win = QWidget()
+    takeoff_btn = QPushButton("takeoff")
+    land_button = QPushButton("land")
+    takeoff_btn.clicked.connect(tello.take_off)
+    land_button.clicked.connect(tello.land)
+    layout = QVBoxLayout()
+    layout.addWidget(takeoff_btn)
+    layout.addWidget(land_button)
+    win.setLayout(layout)
+
     tello.batteryValue.connect(lambda status: print('batt', status))
     tello.is_flying_signal.connect(lambda status: print('flying?', status))
     tello.connection.connect(lambda status: print('connection', status))
     tello.init()
-
 
     def value_updated(x, y, x2, y2):
         tello.process_motion(y,x,y2,x2)
@@ -34,5 +38,6 @@ if __name__ == "__main__":
         app.aboutToQuit.connect(gamepad.stop)
 
     app.aboutToQuit.connect(tello.stop)
+    win.show()
     sys.exit(app.exec_())
     tello.stop()
