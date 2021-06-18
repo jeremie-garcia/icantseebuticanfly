@@ -15,8 +15,8 @@ from pythonosc.udp_client import SimpleUDPClient
 from bracelet.bracelet import Bracelet
 from drone.crazydrone import CrazyDrone
 
-if len(sys.argv) > 1:
-    URI = sys.argv[1]
+#set the maximum distance to start detecting obstacles
+R_MAX = 2  # 2 meters
 
 if __name__ == '__main__':
 
@@ -51,11 +51,9 @@ if __name__ == '__main__':
 
         def update_range():
             multiranger = drone.multiranger
-            if multiranger is not None:
-                print("update range", multiranger.right)
 
             if multiranger is not None and multiranger.right is not None:
-                R_MAX = 2  # 2 meters
+
                 # right left front back up down
                 values = [normalize(multiranger.right, R_MAX),
                           normalize(multiranger.left, R_MAX),
@@ -71,7 +69,7 @@ if __name__ == '__main__':
 
     timer = QTimer()
     timer.timeout.connect(update_range)
-    timer.start(2000)
+    timer.start(100)
 
     app.aboutToQuit.connect(bracelet.stop)
     sys.exit(app.exec_())
