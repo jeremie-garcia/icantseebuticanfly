@@ -16,7 +16,7 @@ from bracelet.bracelet import Bracelet
 from drone.crazydrone import CrazyDrone
 
 #set the maximum distance to start detecting obstacles
-R_MAX = 2  # 2 meters
+R_MAX = 1  # 2 meters
 
 if __name__ == '__main__':
 
@@ -41,8 +41,10 @@ if __name__ == '__main__':
     bracelet = Bracelet()
 
     def normalize(val, max_val):
+        if(val > max_val):
+            return 1
         newval = val / max_val
-        return 1 - min(max(newval, 0), 1)
+        return min(max(newval, 0), 1)
 
 
     if len(available) > 0:
@@ -61,10 +63,11 @@ if __name__ == '__main__':
                           normalize(multiranger.back, R_MAX),
                           normalize(multiranger.up, R_MAX),
                           normalize(multiranger.down, R_MAX)]
-                print(values)
                 client.send_message("feedback", values)
                 #vibration_values = [values[0], values[1], values[4], values[5]]
-                vibration_values = [values[0], values[1], values[2], values[3]]
+                #vibration_values = [values[0], values[1], values[2], 1]
+                #front right left scenario
+                vibration_values = [values[0], values[1], values[2], 1]
                 bracelet.set_distance_to_obstacles(vibration_values)
 
     timer = QTimer()

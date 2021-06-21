@@ -20,12 +20,14 @@ if __name__ == "__main__":
     win.setLayout(layout)
 
     tello.batteryValue.connect(lambda status: print('batt', status))
+    tello.tempValue.connect(lambda status: print('temp', status))
     tello.is_flying_signal.connect(lambda status: print('flying?', status))
     tello.connection.connect(lambda status: print('connection', status))
     tello.init()
 
     def value_updated(x, y, x2, y2):
-        tello.process_motion(y,x,y2,x2)
+        #print("x",x,"y",y,"x2",x2,"y2",y2)
+        tello.process_motion(x2,y,y2,x)
 
     stream = False
     refresh_duration_in_millis = 50

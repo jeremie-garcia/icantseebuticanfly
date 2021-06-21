@@ -3,6 +3,7 @@ import socket
 import sys
 from threading import Thread
 
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QApplication, QPushButton
 
 from drone.drone import Drone
@@ -15,6 +16,8 @@ def clamp(x):
 
 
 class TelloDrone(Drone):
+    tempValue = pyqtSignal(int)  # value: 'between 0 and 100'
+
     def __init__(self):
         super().__init__()
 
@@ -51,6 +54,7 @@ class TelloDrone(Drone):
 
 
     def send_command(self, cmd):
+        print(cmd,"cmd sent to tello")
         self.cmd_sock.sendto(cmd.encode(encoding="utf-8"), self.tello_address)
 
     def init(self):
@@ -108,7 +112,10 @@ class TelloDrone(Drone):
             try:
                 rep, ip = self.state_sock.recvfrom(1024)
                 self.state_response = rep.decode('utf8')
-                print(self.state_response)
+
+                temp = re.search(r"temph:(\d*)", self.state_response).group()[6:]
+                self.tempValue.emit(int(temp))  # hack...
+                #print("temperature", temp)
                 bat = re.search(r"bat:(\d*)", self.state_response).group()[4:]
                 self.batteryValue.emit(int(bat) * 0.043)  # hack...
             except socket.error as exc:

@@ -133,7 +133,14 @@ class Bracelet():
             self.set_low_value(index)
             timer.stop()
         else:
-            interval = value * (MAX_FREQ - MIN_FREQ) + MIN_FREQ
+            #interval = value * (MAX_FREQ - MIN_FREQ) + MIN_FREQ
+            if value> 0.7:
+                interval = 1000
+            elif value > 0.4:
+                interval = 500
+            else:
+                interval = 250
+
             self.intervals[index] = round(interval)
             if not timer.isActive():
                 timer.start(interval)

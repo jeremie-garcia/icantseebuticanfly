@@ -99,7 +99,7 @@ class FrSky(QObject):
         self.connection.emit(True)
 
 @pyqtSlot(float, float, float, float)
-def value_updated( x, y, x2, y2):
+def value_updated(x, y, x2, y2):
     '''slot to listen to the stick values, index, x, y'''
     print(x, y, x2, y2)
 

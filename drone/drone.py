@@ -13,6 +13,7 @@ class Drone(QObject):
     batteryValue = pyqtSignal(float) #value: 'between 0 and 100'
     is_flying_signal = pyqtSignal(bool) #True or False
 
+
     def __init__(self):
         super().__init__()
 
