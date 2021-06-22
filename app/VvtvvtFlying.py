@@ -22,11 +22,11 @@ PILOT_ID = 224
 DRONE_ID = 223
 
 # Change based on where the targets are in voliere
-target_location = [[-0.1620016098022461, -2.01731538772583, 0.3205585181713104],
-                   [-2.461967945098877, 1.3924974203109741, 0.3217718005180359],
-                   [2.544313430786133, 1.4535149335861206, 0.3303894102573395]]
 
 TARGET_INDEX = 0
+target_location = [[-1.8425968885421753, -1.6901285648345947, 1.584301233291626],
+           [-2.3434648513793945, 1.3767240047454834, 1.0550905466079712],
+           [2.6752610206604004, 1.177451491355896, 1.0487945079803467]]
 
 
 def distance_two_d(drone_loc, target_loc):
@@ -107,7 +107,7 @@ class VvtvvtFlying():
 
     def send_data_to_arduino(self, message):
         if self.arduino != None:
-            print(message)
+            #print(message)
             self.arduino.write(bytes(message, 'utf-8'))
 
     def send_data_to_audio_server(self, address, message):
@@ -145,6 +145,9 @@ class VvtvvtFlying():
         self.send_data_to_devices()
         # Update the location of the app
         self.drone_prev_location = self.drone_location
+        # Update the distance between the app and the target
+        self.prev_distance = self.current_distance
+        print("drone", self.drone_location)
 
 
 if __name__ == "__main__":
