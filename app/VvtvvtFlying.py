@@ -1,6 +1,7 @@
 import sys
 
 import math
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication
 from serial import Serial
 from serial.tools.list_ports import comports
@@ -129,20 +130,16 @@ class VvtvvtFlying():
         # compute distance from drone to target (do not use elevation)
         distance = distance_two_d(self.drone_location, target_location[TARGET_INDEX])
         self.send_data_to_audio_server("distance", distance)
-        #self.bracelet.set_distance_to_target(distance)
+        self.bracelet.set_distance_to_target(distance)
 
     def receive_rigid_body_list(self, rigidBodyList, stamp):
         for (ac_id, pos, quat, valid) in rigidBodyList:
             if valid:
-
                 if ac_id == self.pilot_id:
                     self.pilot_location = pos
                     self.pilot_orientation = quat
                 elif ac_id == self.drone_id:
                     self.drone_location = pos
-
-        # update data to be sent to bracelet and audio
-        self.send_data_to_devices()
         # Update the location of the app
         self.drone_prev_location = self.drone_location
         # Update the distance between the app and the target
@@ -155,6 +152,10 @@ if __name__ == "__main__":
 
     vvt = VvtvvtFlying(PILOT_ID, DRONE_ID)
     vvt.send_data_to_devices()
+
+    timer = QTimer()
+    timer.start(50)
+    timer.timeout.connect(vvt.send_data_to_devices)
 
     app.aboutToQuit.connect(vvt.stop)
     sys.exit(app.exec_())

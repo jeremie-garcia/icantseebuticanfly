@@ -64,8 +64,6 @@ class Bracelet():
 
         self.distance_timer = QTimer()
         self.prev_interval = 1500
-        self.distance_timer.start(self.prev_interval)
-
 
         # chaque timer se termine et se relance avec la fréquence définie
 
@@ -131,25 +129,32 @@ class Bracelet():
     def set_distance_to_target(self, distance):
 
         if distance > 5:
-            interval = 1500
+            interval = 1600
         elif distance > 4:
-            interval = 1250
+            interval = 1200
         elif distance > 3:
-            interval = 1000
+            interval = 800
         elif distance > 2:
-            interval = 750
-        elif distance > 1:
             interval = 500
+        elif distance > 1:
+            interval = 350
         else:
             interval = 250
 
+        #print("bracelet receinving distance", distance)
         if interval != self.prev_interval:
+            print("interval shoudl be updated", interval)
+            if not self.distance_timer.isActive():
+                self.distance_timer.start(interval)
+                self.distance_timer.timeout.connect(self.trigger_burst)
+            else:
+                self.distance_timer.timeout.connect(lambda:  self.distance_timer.setInterval(interval))
+
             self.distance_timer.setInterval(interval)
             self.prev_interval = interval
 
     def trigger_burst(self):
         self.turn_on_all_motors()
-        print("triggering burst")
         QTimer.singleShot(BURST_DELAY, self.turn_off_all_motors)
 
     def trigger_burst_for_index(self, index):
