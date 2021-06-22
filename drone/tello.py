@@ -54,7 +54,7 @@ class TelloDrone(Drone):
 
 
     def send_command(self, cmd):
-        print(cmd,"cmd sent to tello")
+        #print(cmd,"cmd sent to tello")
         self.cmd_sock.sendto(cmd.encode(encoding="utf-8"), self.tello_address)
 
     def init(self):
@@ -113,8 +113,8 @@ class TelloDrone(Drone):
                 rep, ip = self.state_sock.recvfrom(1024)
                 self.state_response = rep.decode('utf8')
 
-                temp = re.search(r"temph:(\d*)", self.state_response).group()[6:]
-                self.tempValue.emit(int(temp))  # hack...
+                #temp = re.search(r"temph:(\d*)", self.state_response).group()[6:]
+                #self.tempValue.emit(int(temp))  # hack...
                 #print("temperature", temp)
                 bat = re.search(r"bat:(\d*)", self.state_response).group()[4:]
                 self.batteryValue.emit(int(bat) * 0.043)  # hack...
@@ -129,7 +129,7 @@ class TelloDrone(Drone):
         Need to be in -100 100 range for each commands
         '''
 
-        if self.cmd_state != "land" and self.cmd_state != "takeoff":
+        if self.is_flying():
             velocity_up_down = clamp(_up * 50 * self.max_vert_speed)
             velocity_yaw = clamp(_rotate/180 * 100 * self.max_rotation_speed)
             velocity_front_back = clamp(_front * 50 * self.max_horiz_speed)

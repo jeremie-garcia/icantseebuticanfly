@@ -37,8 +37,7 @@ if __name__ == '__main__':
     # osc client to send data to audio server
     client = SimpleUDPClient(SOUND_SERVER_IP, SOUND_SERVER_PORT)
 
-    #create a bracelet to send tactile feedback
-    bracelet = Bracelet()
+
 
     def normalize(val, max_val):
         if(val > max_val):
@@ -47,9 +46,17 @@ if __name__ == '__main__':
         return min(max(newval, 0), 1)
 
 
+    timer = QTimer()
+    def stop_timer():
+        timer.stop()
+
     if len(available) > 0:
+        print(available)
         URI = available[0][0]
         drone = CrazyDrone(URI)
+
+        # create a bracelet to send tactile feedback
+        bracelet = Bracelet()
 
         def update_range():
             multiranger = drone.multiranger
@@ -63,6 +70,9 @@ if __name__ == '__main__':
                           normalize(multiranger.back, R_MAX),
                           normalize(multiranger.up, R_MAX),
                           normalize(multiranger.down, R_MAX)]
+
+
+                #print(values)
                 client.send_message("feedback", values)
                 #vibration_values = [values[0], values[1], values[4], values[5]]
                 #vibration_values = [values[0], values[1], values[2], 1]
@@ -70,9 +80,12 @@ if __name__ == '__main__':
                 vibration_values = [values[0], values[1], values[2], 1]
                 bracelet.set_distance_to_obstacles(vibration_values)
 
-    timer = QTimer()
-    timer.timeout.connect(update_range)
-    timer.start(100)
 
-    app.aboutToQuit.connect(bracelet.stop)
+        timer.timeout.connect(update_range)
+        timer.start(50)
+
+        app.aboutToQuit.connect(bracelet.stop)
+        app.aboutToQuit.connect(stop_timer)
+
+
     sys.exit(app.exec_())
