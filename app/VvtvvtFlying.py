@@ -129,6 +129,7 @@ class VvtvvtFlying():
 
         # compute distance from drone to target (do not use elevation)
         distance = distance_two_d(self.drone_location, target_location[TARGET_INDEX])
+        #print(distance)
         self.send_data_to_audio_server("distance", distance)
         self.bracelet.set_distance_to_target(distance)
 
@@ -144,7 +145,7 @@ class VvtvvtFlying():
         self.drone_prev_location = self.drone_location
         # Update the distance between the app and the target
         self.prev_distance = self.current_distance
-        print("drone", self.drone_location)
+        #print("drone", self.drone_location)
 
 
 if __name__ == "__main__":

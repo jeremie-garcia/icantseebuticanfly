@@ -129,17 +129,25 @@ class Bracelet():
     def set_distance_to_target(self, distance):
 
         if distance > 5:
-            interval = 1600
+            interval = 1150
         elif distance > 4:
-            interval = 1200
+            interval = 950
+        elif distance > 3.5:
+            interval = 850
         elif distance > 3:
-            interval = 800
+            interval = 750
+        elif distance > 2.5:
+            interval = 650
         elif distance > 2:
-            interval = 500
+            interval = 550
+        elif distance > 1.5:
+            interval = 450
         elif distance > 1:
             interval = 350
-        else:
+        elif distance > 0.5:
             interval = 250
+        else:
+            interval = 200
 
         #print("bracelet receinving distance", distance)
         if interval != self.prev_interval:
